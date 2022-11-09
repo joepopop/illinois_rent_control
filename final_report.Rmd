@@ -42,7 +42,7 @@ dat <- basic_dat %>%
 
 ## Overview
 
-This project was done for Lift the Ban Coalition, an non-profit organization with the goal of lifting the ban on rent control in Illinois. Lift the Ban Coalition wants to enforce rent control to make rent more affordable in Illinois. However, the counterargument is that rent control should be banned as it harms the "mom and pop", "small" landlords. The task was to evaluate whether there are many "mom and pop" landlords to be harmed from rent control and come up with possible ways to make rent more affordable while limiting the harm on "small" landlords. This report presents data in a digestable manner and helps the organization craft appropriate legislation.
+This project was done for Lift the Ban Coalition, an non-profit organization with the goal of lifting the ban on rent control in Illinois. Lift the Ban Coalition wants to enforce rent control to make rent more affordable in Illinois. However, the counterargument is that rent control should be banned as it harms the "mom and pop", "small" landlords. The task was to evaluate whether there are many "mom and pop" landlords to be harmed from rent control and come up with possible ways to make rent more affordable while limiting the harm on "small" landlords. This report presents data in a digestible manner and helps the organization craft appropriate legislation.
 
 ## Data
 
