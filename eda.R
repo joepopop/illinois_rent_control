@@ -2,6 +2,7 @@
 library(tidyverse)
 library(skimr)
 library(sf)
+library(leaflet)
 
 # load data ----
 
@@ -24,20 +25,20 @@ dat <- basic_dat %>%
 
 # eda ----
 
+# missingness and summary
 basic_dat %>% 
   skim_without_charts()
 
+# gegraphic distribution
 dat %>% 
   group_by(community_area) %>% 
   mutate(count = n()) %>% 
   select(count, community_area, geometry) %>% 
   distinct(community_area, .keep_all = TRUE) %>% 
-  mutate(count = cut(count, c(0, 200, 1000, Inf))) %>% 
+  mutate(count = cut(count, c(0, 100, 1000, Inf))) %>% 
   ggplot(aes(fill = count, geometry = geometry)) + 
   geom_sf() +
   scale_fill_brewer(palette = "Set2") +
   labs(
     title = "Number of properties in each community area"
   )
-
-

@@ -1,9 +1,9 @@
 ---
-title: "Final Report"
+title: "Final Report for Lift the Ban Coalition"
 author: "Joe Omatoi"
 date: '2022-11-08'
 output: 
-  html_document: 
+  rmdformats::html_clean:
     code_folding: hide
 runtime: shiny
 ---
@@ -17,6 +17,7 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 library(tidyverse)
 library(skimr)
 library(sf)
+library(leaflet)
 
 
 # load data ----
@@ -39,7 +40,7 @@ dat <- basic_dat %>%
 
 ```
 
-## Project overview
+## Overview
 
 This project was done for Lift the Ban Coalition, an non-profit organization with the goal of lifting the ban on rent control in Illinois. Lift the Ban Coalition wants to enforce rent control to make rent more affordable in Illinois. However, the counterargument is that rent control should be banned as it harms the "mom and pop", "small" landlords. The task was to evaluate whether there are many "mom and pop" landlords to be harmed from rent control and come up with possible ways to make rent more affordable while limiting the harm on "small" landlords. This report presents data in a digestable manner and helps the organization craft appropriate legislation.
 
@@ -71,22 +72,22 @@ The task follows the next 2 approaches.
 
     The idea is to define who counts as a "small" landlord and evaluate the claim that many "small" landlords will get affected by rent control by looking at the proportion and number of "small" landlords. The number of properties owned (with varying thresholds) is used to define "small" landlords who are identified by the taxpayer match code.
 
-2.  Identify areas where majority of properties are owned by "big" landlords
+2.  Identify areas where "small" landlord properties are a minority
 
     Since the goal is to not only make rent more affordable, but also protect "small" landlords, the question is, "can we identify areas where there are very few "small" landlords?"
 
 ## Exploratory Analysis
 
-All the variables are complete, meaning we have no missingness issues.
+All the variables are complete, meaning there are no missingness issues.
 
 ```{r}
 basic_dat %>% 
   skim_without_charts()
 ```
 
-However, since a geospatial analysis will be conducted, the following map was made to make sure that each community area had a substantial number of properties for analysis. As shown below, there are a few counties with less than or equal to 200 properties. There is also a county without any property listed in the dataset. These areas need close attention during the analysis since they may not have a substantial enough amount of properties to make any conclusions.
+However, since a geospatial analysis will be conducted, the following map was made to make sure that each community area had a substantial number of properties for analysis. As shown below, there are a few counties with less than or equal to 100 properties. These areas need close attention during the analysis since they may not have a substantial enough amount of properties to make any conclusions.  Now, Loop was one of the counties with a property count of less than 100 from the exploratory analysis.  The precise count is 78; the percentage of "small" landlord properties in Loop should therefore be processed with caution.
 
-```{r}
+```{r, fig.align='center'}
 dat %>% 
   group_by(community_area) %>% 
   mutate(count = n()) %>% 
@@ -97,17 +98,18 @@ dat %>%
   geom_sf() +
   scale_fill_brewer(palette = "Set2") +
   labs(
-    title = "Number of properties in each community area"
+    title = "Number of properties in each community area",
+    fill = "Count"
   )
 ```
 
 ## Analysis
 
-1.  Uncover percentages/count of "big" vs "small" landlords
+### 1. Uncover percentages/count of "big" vs "small" landlords
 
-    The tool below represents the percentages and counts of "big" and "small" landlords based on the threshold of number of properties owned, which can be selected on the slider. The check box allows viewers to switch between percentage and count.
+The tool below represents the percentages and counts of "big" and "small" landlords based on the threshold of number of properties owned, which can be selected on the slider. The check box allows viewers to switch between percentage and count.
 
-    Lift the Ban Coalition argues that the threshold of 6 properties owned should be used to divide "big" vs "small" landlords, while 12 is the standard number recognized in the discussion. However, no matter the choice, the percentage of "small" landlords is nearly 100%. This finding motivates an investigation of the prevalence of properties owned by "small" landlords in different counties.
+Lift the Ban Coalition argues that the threshold of 6 properties owned should be used to divide "big" vs "small" landlords, while 12 is the standard number recognized in the discussion. However, no matter the choice, the percentage of "small" landlords is nearly 100%. This finding motivates an investigation of the prevalence of properties owned by "small" landlords in different counties.
 
 ```{r}
 shinyApp(
@@ -188,11 +190,83 @@ shinyApp(
 )
 ```
 
+### 2. Identify areas where "small" landlord properties are a minority
+
+This tool represents the percentage of "small" landlord properties in different counties. Just like the previous one, the slider can be used to adjust the threshold that categorizes landlords into the two groups. Clicking on each county will display the county name and its corresponding percentage. Even though about 99% of the landlords are "small" on aggregate, taking a closer look to each county's properties reveals that there exist several counties where "small" landlords are a minority. The three counties with lowest percentages of "small" landlord properties were: Oakland (30%), Near South Side (39%), and Loop (49%). These counties concentrate in the populous areas around Chicago, meaning policies in these counties will have an impact on a considerable number of people.
+
 ```{r}
-# shinyApp(
-# 
-#   
-# )
+shinyApp(
+
+  ui <- fluidPage(
+    
+    titlePanel(""),
+
+    sidebarLayout(
+        sidebarPanel(
+            sliderInput("threshold",
+                        "Adjust number of properties ",
+                        min = 3,
+                        max = 300,
+                        value = 6),
+            ),
+            mainPanel(leafletOutput("distPlot2"))
+    )
+  ),
+  
+  server <- function(input, output) {
+  
+  output$distPlot2 <- renderLeaflet({
+    
+    leaflet_dat <- dat %>% 
+      group_by(community_area) %>% 
+      mutate(
+        count = if_else(properties_owned < input$threshold, 1, 0), 
+        percentage = round(mean(count)*100),
+      ) %>% 
+      select(community_area, percentage, geometry) %>% 
+      mutate(label = paste0(community_area, ": ", percentage, "%")) %>% 
+      distinct() %>% 
+      ungroup() %>% 
+      st_as_sf()
+  
+  bins <- c(0, 25, 50, 75, 100)
+  pal <- colorBin("YlOrRd", domain = leaflet_dat$percentage, bins = bins)
+
+
+  leaflet() %>% 
+    setView(lng = -87.69, lat = 41.87, zoom = 10) %>% 
+    addProviderTiles(
+      "OpenStreetMap",
+      group = "OpenStreetMap"
+    ) %>% 
+    addProviderTiles(
+      "CartoDB.Positron",
+      group = "CartoDB.Positron"
+    ) %>% 
+    addPolygons(
+      data = leaflet_dat,
+      fillColor= ~pal(percentage),
+      fillOpacity = 0.2,
+      color = "grey",
+      weight = 1.5,
+      label = leaflet_dat$label
+    ) %>%
+    addScaleBar("bottomleft") %>% 
+    addLegend(
+      pal = pal, 
+      values = leaflet_dat$percentage, 
+      opacity = 0.7, 
+      title = "% 'small'",
+      position = "topright"
+      )
+
+  })
+  }
+)
 ```
 
 ## Conclusion
+
+All in all, the opposition's claim that there are many "mom and pop" landlords that can be harmed through rent control appears strong, but a close examination of individual counties argues otherwise.  Even though most Illinois landlords are "mom and pop" landlords, properties owned by them account for less than 50% of the total in the populous areas around Chicago: Oakland (30%), Near South Side (39%), and Loop (49%).  This finding will serve directly in crafting legislation that would advocate for rent control in counties with a high population and low percentage of "small" landlord properties.
+
+If there was more time, population measures, expected change in rent price (with rent control), and other relevant data in these counties can be used to quantify the financial impact of possible rent control policies.
