@@ -60,7 +60,7 @@ The first dataset, provided by the organization, included 129907 rows of propert
 
 -   community area
 
-The second dataset was the [IL Community Area data](https://raw.githubusercontent.com/thisisdaryn/data/master/geo/chicago/Comm_Areas.geojson%22), which contained supplementary geographic data needed to visualize property characteristics across Illinois for exploratory purposes.
+The second dataset was the [IL Community Area data](https://raw.githubusercontent.com/thisisdaryn/data/master/geo/chicago/Comm_Areas.geojson%22), which contained supplementary geographic data needed to visualize property characteristics across Illinois.
 
 Both datasets were joined by the common community area column.
 
