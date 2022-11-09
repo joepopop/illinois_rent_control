@@ -1,0 +1,198 @@
+---
+title: "Final Report"
+author: "Joe Omatoi"
+date: '2022-11-08'
+output: 
+  html_document: 
+    code_folding: hide
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+```{r}
+# load pacakges ----
+library(tidyverse)
+library(skimr)
+library(sf)
+
+
+# load data ----
+
+# provided data
+basic_dat <- read_csv("data/basic_dat.csv") %>% 
+  janitor::clean_names() %>% 
+  rename(properties_owned = properties_held_by_taxpayer_match_code) %>% 
+  rename(address = property_address) %>% 
+  select(address, community_area, taxpayer_match_code, lat, long, properties_owned) 
+
+# illinois community area data from web
+map_dat <- read_sf("https://raw.githubusercontent.com/thisisdaryn/data/master/geo/chicago/Comm_Areas.geojson") %>% 
+  rename(community_area = community) %>% 
+  mutate(community_area = tools::toTitleCase(tolower(community_area))) 
+
+# combined data
+dat <- basic_dat %>% 
+  left_join(map_dat, by = "community_area")
+
+```
+
+## Project overview
+
+This project was done for Lift the Ban Coalition, an non-profit organization with the goal of lifting the ban on rent control in Illinois. Lift the Ban Coalition wants to enforce rent control to make rent more affordable in Illinois. However, the counterargument is that rent control should be banned as it harms the "mom and pop", "small" landlords. The task was to evaluate whether there are many "mom and pop" landlords to be harmed from rent control and come up with possible ways to make rent more affordable while limiting the harm on "small" landlords. This report presents data in a digestable manner and helps the organization craft appropriate legislation.
+
+## Data
+
+Two datasets were combined for this project.
+
+The first dataset, provided by the organization, included 129907 rows of properties with 13 columns. The dataset was narrowed down so that each observation (property) had the following 6 key attributes:
+
+-   taxpayer match code (identifies landlords; many landlords have different taxpayer names but can only have one taxpayer match code)
+
+-   number of properties owned by the property's landlord
+
+-   latitude
+
+-   longitude
+
+-   community area
+
+The second dataset was the [IL Community Area data](https://raw.githubusercontent.com/thisisdaryn/data/master/geo/chicago/Comm_Areas.geojson%22), which contained supplementary geographic data needed to visualize property characteristics across Illinois for exploratory purposes.
+
+Both datasets were joined by the common community area column.
+
+## Approach
+
+The task follows the next 2 approaches.
+
+1.  Uncover percentages/count of "big" vs "small" landlords
+
+    The idea is to define who counts as a "small" landlord and evaluate the claim that many "small" landlords will get affected by rent control by looking at the proportion and number of "small" landlords. The number of properties owned (with varying thresholds) is used to define "small" landlords who are identified by the taxpayer match code.
+
+2.  Identify areas where majority of properties are owned by "big" landlords
+
+    Since the goal is to not only make rent more affordable, but also protect "small" landlords, the question is, "can we identify areas where there are very few "small" landlords?"
+
+## Exploratory Analysis
+
+All the variables are complete, meaning we have no missingness issues.
+
+```{r}
+basic_dat %>% 
+  skim_without_charts()
+```
+
+However, since a geospatial analysis will be conducted, the following map was made to make sure that each community area had a substantial number of properties for analysis. As shown below, there are a few counties with less than or equal to 200 properties. There is also a county without any property listed in the dataset. These areas need close attention during the analysis since they may not have a substantial enough amount of properties to make any conclusions.
+
+```{r}
+dat %>% 
+  group_by(community_area) %>% 
+  mutate(count = n()) %>% 
+  select(count, community_area, geometry) %>% 
+  distinct(community_area, .keep_all = TRUE) %>% 
+  mutate(count = cut(count, c(0, 200, 1000, Inf))) %>% 
+  ggplot(aes(fill = count, geometry = geometry)) + 
+  geom_sf() +
+  scale_fill_brewer(palette = "Set2") +
+  labs(
+    title = "Number of properties in each community area"
+  )
+```
+
+## Analysis
+
+1.  Uncover percentages/count of "big" vs "small" landlords
+
+    The tool below represents the percentages and counts of "big" and "small" landlords based on the threshold of number of properties owned, which can be selected on the slider. The check box allows viewers to switch between percentage and count.
+
+    Lift the Ban Coalition argues that the threshold of 6 properties owned should be used to divide "big" vs "small" landlords, while 12 is the standard number recognized in the discussion. However, no matter the choice, the percentage of "small" landlords is nearly 100%. This finding motivates an investigation of the prevalence of properties owned by "small" landlords in different counties.
+
+```{r}
+shinyApp(
+
+  ui <- fluidPage(
+    
+    titlePanel(""),
+
+    sidebarLayout(
+        sidebarPanel(
+            sliderInput("threshold",
+                        "Adjust number of properties ",
+                        min = 3,
+                        max = 300,
+                        value = 6),
+            checkboxInput("raw", "percentage/number"),
+            ),
+            mainPanel(plotOutput("distPlot"))
+    )
+  ),
+  
+  server <- function(input, output) {
+  
+  output$distPlot <- renderPlot({
+    
+    text <- basic_dat %>% 
+      distinct(taxpayer_match_code, .keep_all = T) %>% 
+      mutate(
+        properties_owned = if_else(properties_owned < input$threshold, paste('<', input$threshold), paste('>', input$threshold))
+      ) %>% 
+      group_by(properties_owned) %>% 
+      count() 
+    
+    text2 <- text %>% 
+      mutate(
+        x = 'x',
+        n = if_else(properties_owned == paste('<', input$threshold), sum(text$n), n)
+      )
+    
+    text3 <- text %>% 
+      mutate(
+        n = paste(round(n/sum(text$n)*100, 0), '%')
+      )
+    
+    basic_dat %>% 
+      filter(!is.na(properties_owned)) %>% 
+      distinct(taxpayer_match_code, .keep_all = T) %>% 
+      mutate(
+        x = "x",
+        properties_owned = if_else(properties_owned <input$threshold, paste('<', input$threshold), paste('>', input$threshold))
+      ) %>% 
+      ggplot() +
+      aes(x = x, fill = properties_owned) +
+      geom_bar(color = "white", alpha = 0.75) +
+      annotate(
+        geom = "text",
+        x = text2$x,
+        y = text2$n - text$n/2,
+        label = if(input$raw == T) (text$n) else (text3$n),
+        size = 10
+      ) +
+      coord_polar("y") +
+      theme(
+        # panel.background = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid.major.y = element_blank(),
+      ) +
+      # theme_void() +
+      labs(
+        fill = "Properties owned",
+        x = NULL,
+        y = NULL,
+        title = paste("Percentage/number of landlords that own more/less than", input$threshold, "properties", sep = " ")
+      )
+  })
+  }
+)
+```
+
+```{r}
+# shinyApp(
+# 
+#   
+# )
+```
+
+## Conclusion
