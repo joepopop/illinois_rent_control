@@ -81,6 +81,7 @@ The task follows the next 2 approaches.
 All the variables are complete, meaning there are no missingness issues.
 
 ```{r}
+# missingness check and summary
 basic_dat %>% 
   skim_without_charts()
 ```
@@ -88,6 +89,7 @@ basic_dat %>%
 However, since a geospatial analysis will be conducted, the following map was made to make sure that each community area had a substantial number of properties for analysis. As shown below, there are a few counties with less than or equal to 100 properties. These areas need close attention during the analysis since they may not have a substantial enough amount of properties to make any conclusions.  Now, Loop was one of the counties with a property count of less than 100 from the exploratory analysis.  The precise count is 78; the percentage of "small" landlord properties in Loop should therefore be processed with caution.
 
 ```{r, fig.align='center'}
+# gegraphic distribution
 dat %>% 
   group_by(community_area) %>% 
   mutate(count = n()) %>% 
@@ -113,7 +115,7 @@ Lift the Ban Coalition argues that the threshold of 6 properties owned should be
 
 ```{r}
 shinyApp(
-
+  # define ui
   ui <- fluidPage(
     
     titlePanel(""),
@@ -130,9 +132,10 @@ shinyApp(
             mainPanel(plotOutput("distPlot"))
     )
   ),
-  
+  # define server
   server <- function(input, output) {
   
+  # generate pie chart
   output$distPlot <- renderPlot({
     
     text <- basic_dat %>% 
@@ -196,7 +199,7 @@ This tool represents the percentage of "small" landlord properties in different 
 
 ```{r}
 shinyApp(
-
+  # define ui
   ui <- fluidPage(
     
     titlePanel(""),
@@ -212,9 +215,10 @@ shinyApp(
             mainPanel(leafletOutput("distPlot2"))
     )
   ),
-  
+  # define server
   server <- function(input, output) {
   
+  # generate map
   output$distPlot2 <- renderLeaflet({
     
     leaflet_dat <- dat %>% 
