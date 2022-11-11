@@ -29,7 +29,7 @@ basic_dat <- read_csv("data/basic_dat.csv") %>%
   rename(address = property_address) %>% 
   select(address, community_area, taxpayer_match_code, lat, long, properties_owned) 
 
-# illinois community area data from web
+# illinois cook community area data from web
 map_dat <- read_sf("https://raw.githubusercontent.com/thisisdaryn/data/master/geo/chicago/Comm_Areas.geojson") %>% 
   rename(community_area = community) %>% 
   mutate(community_area = tools::toTitleCase(tolower(community_area))) 
@@ -48,7 +48,7 @@ This project was done for Lift the Ban Coalition, an non-profit organization wit
 
 Two datasets were combined for this project.
 
-The first dataset, provided by the organization, included 129907 rows of properties with 13 columns. The dataset was narrowed down so that each observation (property) had the following 6 key attributes:
+The first dataset, provided by the organization, included 129907 rows of properties in Cook county with 13 columns. The dataset was narrowed down so that each observation (property) had the following 6 key attributes:
 
 -   taxpayer match code (identifies landlords; many landlords have different taxpayer names but can only have one taxpayer match code)
 
@@ -60,7 +60,7 @@ The first dataset, provided by the organization, included 129907 rows of propert
 
 -   community area
 
-The second dataset was the [IL Community Area data](https://raw.githubusercontent.com/thisisdaryn/data/master/geo/chicago/Comm_Areas.geojson%22), which contained supplementary geographic data needed to visualize property characteristics across Illinois.
+The second dataset was the [IL Cook Community Area data](https://raw.githubusercontent.com/thisisdaryn/data/master/geo/chicago/Comm_Areas.geojson%22), which contained supplementary geographic data needed to visualize property characteristics across Cook county in Illinois.
 
 Both datasets were joined by the common community area column.
 
@@ -86,7 +86,7 @@ basic_dat %>%
   skim_without_charts()
 ```
 
-However, since a geospatial analysis will be conducted, the following map was made to make sure that each community area had a substantial number of properties for analysis. As shown below, there are a few counties with less than or equal to 100 properties. These areas need close attention during the analysis since they may not have a substantial enough amount of properties to make any conclusions.  Now, Loop was one of the counties with a property count of less than 100 from the exploratory analysis.  The precise count is 78; the percentage of "small" landlord properties in Loop should therefore be processed with caution.
+However, since a geospatial analysis will be conducted, the following map was made to make sure that each community area had a substantial number of properties for analysis. As shown below, there are a few community areas with less than or equal to 100 properties. These areas need close attention during the analysis since they may not have a substantial enough amount of properties to make any conclusions.  Now, Loop was one of the community areas with a property count of less than 100 from the exploratory analysis.  The precise count is 78; the percentage of "small" landlord properties in Loop should therefore be processed with caution.
 
 ```{r, fig.align='center'}
 # gegraphic distribution
@@ -111,7 +111,7 @@ dat %>%
 
 The tool below represents the percentages and counts of "big" and "small" landlords based on the threshold of number of properties owned, which can be selected on the slider. The check box allows viewers to switch between percentage and count.
 
-Lift the Ban Coalition argues that the threshold of 6 properties owned should be used to divide "big" vs "small" landlords, while 12 is the standard number recognized in the discussion. However, no matter the choice, the percentage of "small" landlords is nearly 100%. This finding motivates an investigation of the prevalence of properties owned by "small" landlords in different counties.
+Lift the Ban Coalition argues that the threshold of 6 properties owned should be used to divide "big" vs "small" landlords, while 12 is the standard number recognized in the discussion. However, no matter the choice, the percentage of "small" landlords is nearly 100%. This finding motivates an investigation of the prevalence of properties owned by "small" landlords in different community areas.
 
 ```{r}
 shinyApp(
@@ -195,7 +195,7 @@ shinyApp(
 
 ### 2. Identify areas where "small" landlord properties are a minority
 
-This tool represents the percentage of "small" landlord properties in different counties. Just like the previous one, the slider can be used to adjust the threshold that categorizes landlords into the two groups. Clicking on each county will display the county name and its corresponding percentage. Even though about 99% of the landlords are "small" on aggregate, taking a closer look to each county's properties reveals that there exist several counties where "small" landlords are a minority. The three counties with lowest percentages of "small" landlord properties were: Oakland (30%), Near South Side (39%), and Loop (49%). These counties concentrate in the populous areas around Chicago, meaning policies in these counties will have an impact on a considerable number of people.
+This tool represents the percentage of "small" landlord properties in different community areas. Just like the previous one, the slider can be used to adjust the threshold that categorizes landlords into the two groups. Clicking on each community area will display the community area name and its corresponding percentage. Even though about 99% of the landlords are "small" on aggregate, taking a closer look to each community area's properties reveals that there exist several community areas where "small" landlords are a minority. The three community areas with lowest percentages of "small" landlord properties were: Oakland (30%), Near South Side (39%), and Loop (49%). These community areas concentrate in the populous areas around Chicago, meaning policies in these community areas will have an impact on a considerable number of people.
 
 ```{r}
 shinyApp(
@@ -271,6 +271,6 @@ shinyApp(
 
 ## Conclusion
 
-All in all, the opposition's claim that there are many "mom and pop" landlords that can be harmed through rent control appears strong, but a close examination of individual counties argues otherwise.  Even though most Illinois landlords are "mom and pop" landlords, properties owned by them account for less than 50% of the total in the populous areas around Chicago: Oakland (30%), Near South Side (39%), and Loop (49%).  This finding will serve directly in crafting legislation that would advocate for rent control in counties with a high population and low percentage of "small" landlord properties.
+All in all, the opposition's claim that there are many "mom and pop" landlords that can be harmed through rent control appears strong, but a close examination of individual community areas argues otherwise.  Even though most Illinois Cook landlords are "mom and pop" landlords, properties owned by them account for less than 50% of the total in the populous areas around Chicago: Oakland (30%), Near South Side (39%), and Loop (49%).  This finding will serve directly in crafting legislation that would advocate for rent control in community areas with a high population and low percentage of "small" landlord properties.
 
-If there was more time, population measures, expected change in rent price (with rent control), and other relevant data in these counties can be used to quantify the financial impact of possible rent control policies.
+If there was more time, population measures, expected change in rent price (with rent control), and other relevant data in these community areas can be used to quantify the financial impact of possible rent control policies.
