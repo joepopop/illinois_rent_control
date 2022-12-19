@@ -1,9 +1,9 @@
 ---
-title: "Final Report for Lift the Ban Coalition"
+title: "Report for Lift the Ban Coalition \n Produced by: Joe Omatoi"
 author: "Joe Omatoi"
 date: '2022-11-08'
 output: 
-  rmdformats::html_clean:
+  rmdformats::robobook:
     code_folding: hide
 runtime: shiny
 ---
@@ -27,7 +27,8 @@ basic_dat <- read_csv("data/basic_dat.csv") %>%
   janitor::clean_names() %>% 
   rename(properties_owned = properties_held_by_taxpayer_match_code) %>% 
   rename(address = property_address) %>% 
-  select(address, community_area, taxpayer_match_code, lat, long, properties_owned) 
+  rename(number_of_units = relative_size) %>% 
+  select(address, community_area, taxpayer_match_code, lat, long, properties_owned, number_of_units) 
 
 # illinois cook community area data from web
 map_dat <- read_sf("https://raw.githubusercontent.com/thisisdaryn/data/master/geo/chicago/Comm_Areas.geojson") %>% 
@@ -74,7 +75,7 @@ The task follows the next 2 approaches.
 
 2.  Identify areas where "small" landlord properties are a minority
 
-    Since the goal is to not only make rent more affordable, but also protect "small" landlords, the question is, "can we identify areas where there are very few "small" landlords?"
+    Since the goal is to not only make rent more affordable, but also protect "small" landlords, the question is, "can we identify areas where there are very few 'small' landlords?"
 
 ## Exploratory Analysis
 
@@ -89,7 +90,7 @@ basic_dat %>%
 However, since a geospatial analysis will be conducted, the following map was made to make sure that each community area had a substantial number of properties for analysis. As shown below, there are a few community areas with less than or equal to 100 properties. These areas need close attention during the analysis since they may not have a substantial enough amount of properties to make any conclusions.  Now, Loop was one of the community areas with a property count of less than 100 from the exploratory analysis.  The precise count is 78; the percentage of "small" landlord properties in Loop should therefore be processed with caution.
 
 ```{r, fig.align='center'}
-# gegraphic distribution
+# geographic distribution
 dat %>% 
   group_by(community_area) %>% 
   mutate(count = n()) %>% 
@@ -111,7 +112,11 @@ dat %>%
 
 The tool below represents the percentages and counts of "big" and "small" landlords based on the threshold of number of properties owned, which can be selected on the slider. The check box allows viewers to switch between percentage and count.
 
-Lift the Ban Coalition argues that the threshold of 6 properties owned should be used to divide "big" vs "small" landlords, while 12 is the standard number recognized in the discussion. However, no matter the choice, the percentage of "small" landlords is nearly 100%. This finding motivates an investigation of the prevalence of properties owned by "small" landlords in different community areas.
+Lift the Ban Coalition argues that the threshold of 6 properties owned should be used to divide "big" vs "small" landlords, while 12 is the standard number recognized in the discussion. However, no matter the choice, the percentage of "small" landlords is nearly 100%. 
+
+This result is corroborated by an alternative approach that divides the two groups by number of units owned, which can be activated by checking "properties/units". Even with a generous threshold of owning at least 15 units to qualify as a big landlord, about 98% are of total landlords are still considered "small".
+
+This finding motivates an investigation of the prevalence of properties owned by "small" landlords in different community areas.
 
 ```{r}
 shinyApp(
@@ -124,24 +129,28 @@ shinyApp(
         sidebarPanel(
             sliderInput("threshold",
                         "Adjust number of properties ",
-                        min = 3,
+                        min = 1,
                         max = 300,
                         value = 6),
             checkboxInput("raw", "percentage/number"),
+            checkboxInput("switch", "properties/units"),
             ),
-            mainPanel(plotOutput("distPlot"))
+            mainPanel(
+              plotOutput("graph")
+            )
     )
   ),
   # define server
   server <- function(input, output) {
   
   # generate pie chart
-  output$distPlot <- renderPlot({
+  output$graph <- renderPlot({
     
+    # properties chart ----
     text <- basic_dat %>% 
       distinct(taxpayer_match_code, .keep_all = T) %>% 
       mutate(
-        properties_owned = if_else(properties_owned < input$threshold, paste('<', input$threshold), paste('>', input$threshold))
+        properties_owned = if_else(properties_owned <= input$threshold, paste('<=', input$threshold), paste('>=', input$threshold))
       ) %>% 
       group_by(properties_owned) %>% 
       count() 
@@ -149,7 +158,7 @@ shinyApp(
     text2 <- text %>% 
       mutate(
         x = 'x',
-        n = if_else(properties_owned == paste('<', input$threshold), sum(text$n), n)
+        n = if_else(properties_owned == paste('<=', input$threshold), sum(text$n), n)
       )
     
     text3 <- text %>% 
@@ -157,12 +166,12 @@ shinyApp(
         n = paste(round(n/sum(text$n)*100, 0), '%')
       )
     
-    basic_dat %>% 
+    properties <- basic_dat %>% 
       filter(!is.na(properties_owned)) %>% 
       distinct(taxpayer_match_code, .keep_all = T) %>% 
       mutate(
         x = "x",
-        properties_owned = if_else(properties_owned <input$threshold, paste('<', input$threshold), paste('>', input$threshold))
+        properties_owned = if_else(properties_owned <=input$threshold, paste('<=', input$threshold), paste('>=', input$threshold))
       ) %>% 
       ggplot() +
       aes(x = x, fill = properties_owned) +
@@ -186,16 +195,71 @@ shinyApp(
         fill = "Properties owned",
         x = NULL,
         y = NULL,
-        title = paste("Percentage/number of landlords that own more/less than", input$threshold, "properties", sep = " ")
+        title = paste("Percentage/number of landlords that own greater/less than or equal to", input$threshold, "properties", sep = " ")
       )
+
+    # units chart ----
+    text_units <- basic_dat %>% 
+      distinct(taxpayer_match_code, .keep_all = T) %>% 
+      mutate(
+        number_of_units = if_else(number_of_units <= input$threshold, paste('<=', input$threshold), paste('>=', input$threshold))
+      ) %>% 
+      group_by(number_of_units) %>% 
+      count() 
+    
+    text2_units <- text_units %>% 
+      mutate(
+        x = 'x',
+        n = if_else(number_of_units == paste('<=', input$threshold), sum(text_units$n), n)
+      )
+    
+    text3_units <- text_units %>% 
+      mutate(
+        n = paste(round(n/sum(text_units$n)*100, 0), '%')
+      )
+    
+    units <- basic_dat %>% 
+      filter(!is.na(number_of_units)) %>% 
+      distinct(taxpayer_match_code, .keep_all = T) %>% 
+      mutate(
+        x = "x",
+        number_of_units = if_else(number_of_units <=input$threshold, paste('<=', input$threshold), paste('>=', input$threshold))
+      ) %>% 
+      ggplot() +
+      aes(x = x, fill = number_of_units) +
+      geom_bar(color = "white", alpha = 0.75) +
+      annotate(
+        geom = "text",
+        x = text2_units$x,
+        y = text2_units$n - text_units$n/2,
+        label = if(input$raw == T) (text_units$n) else (text3_units$n),
+        size = 10
+      ) +
+      coord_polar("y") +
+      theme(
+        # panel.background = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid.major.y = element_blank(),
+      ) +
+      # theme_void() +
+      labs(
+        fill = "Units owned",
+        x = NULL,
+        y = NULL,
+        title = paste("Percentage/number of landlords that own greater/less than or equal to", input$threshold, "units", sep = " ")
+      )
+    # output chart ----
+    if(input$switch == T) (units) else (properties)
   })
   }
 )
+
 ```
 
 ### 2. Identify areas where "small" landlord properties are a minority
 
-This tool represents the percentage of "small" landlord properties in different community areas. Just like the previous one, the slider can be used to adjust the threshold that categorizes landlords into the two groups. Clicking on each community area will display the community area name and its corresponding percentage. Even though about 99% of the landlords are "small" on aggregate, taking a closer look to each community area's properties reveals that there exist several community areas where "small" landlords are a minority. The three community areas with lowest percentages of "small" landlord properties were: Oakland (30%), Near South Side (39%), and Loop (49%). These community areas concentrate in the populous areas around Chicago, meaning policies in these community areas will have an impact on a considerable number of people.
+This tool represents the percentage of "small" landlord properties in different community areas. Just like the previous one, the slider can be used to adjust the threshold that categorizes landlords into the two groups. Clicking on each community area will display the community area name and its corresponding percentage. Even though about 99% of the landlords are "small" on aggregate, taking a closer look to each community area's properties reveals that there exist several community areas where "small" landlords are a minority. The three community areas with lowest percentages (threshold of 6 vs 12) of "small" landlord properties were: Oakland (30 vs 31%), Near South Side (39 vs 46%), and Loop (49 vs 53%). These community areas concentrate in the populous areas around Chicago, meaning policies in these community areas will have an impact on a considerable number of people.
 
 ```{r}
 shinyApp(
@@ -208,7 +272,7 @@ shinyApp(
         sidebarPanel(
             sliderInput("threshold",
                         "Adjust number of properties ",
-                        min = 3,
+                        min = 1,
                         max = 300,
                         value = 6),
             ),
@@ -224,7 +288,7 @@ shinyApp(
     leaflet_dat <- dat %>% 
       group_by(community_area) %>% 
       mutate(
-        count = if_else(properties_owned < input$threshold, 1, 0), 
+        count = if_else(properties_owned <= input$threshold, 1, 0), 
         percentage = round(mean(count)*100),
       ) %>% 
       select(community_area, percentage, geometry) %>% 
@@ -271,6 +335,6 @@ shinyApp(
 
 ## Conclusion
 
-All in all, the opposition's claim that there are many "mom and pop" landlords that can be harmed through rent control appears strong, but a close examination of individual community areas argues otherwise.  Even though most Illinois Cook landlords are "mom and pop" landlords, properties owned by them account for less than 50% of the total in the populous areas around Chicago: Oakland (30%), Near South Side (39%), and Loop (49%).  This finding will serve directly in crafting legislation that would advocate for rent control in community areas with a high population and low percentage of "small" landlord properties.
+All in all, the opposition's claim that there are many "mom and pop" landlords that can be harmed through rent control appears strong, but a close examination of individual community areas argues otherwise.  Even though most Illinois Cook landlords are "mom and pop" landlords, properties owned by them account for less than about 50% of the total in the populous areas around Chicago: Oakland, Near South Side, and Loop.  This finding will serve directly in crafting legislation that would advocate for rent control in community areas with a high population and low percentage of "small" landlord properties.
 
 If there was more time, population measures, expected change in rent price (with rent control), and other relevant data in these community areas can be used to quantify the financial impact of possible rent control policies.
