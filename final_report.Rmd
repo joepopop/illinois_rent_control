@@ -43,7 +43,7 @@ dat <- basic_dat %>%
 
 ## Overview
 
-This project was done for Lift the Ban Coalition, an non-profit organization with the goal of lifting the ban on rent control in Illinois. Lift the Ban Coalition wants to enforce rent control to make rent more affordable in Illinois. However, the counterargument is that rent control should be banned as it harms the "mom and pop", "small" landlords. The task was to evaluate whether there are many "mom and pop" landlords to be harmed from rent control and come up with possible ways to make rent more affordable while limiting the harm on "small" landlords. This report presents data in a digestible manner and helps the organization craft appropriate legislation.
+This project was undertaken on behalf of the Lift the Ban Coalition, a non-profit organization that aims to lift the ban on rent control in Illinois in order to increase the affordability of housing in the state. However, opponents of rent control argue that it disproportionately harms small, independent landlords. The objective of this project was to assess the number of such landlords who may be affected by rent control and to propose solutions that balance the need for affordable housing with the interests of small-scale property owners. The report presents data in a clear and concise manner to aid the organization in developing effective legislation.
 
 ## Data
 
@@ -71,12 +71,13 @@ The task follows the next 2 approaches.
 
 1.  Uncover percentages/count of "big" vs "small" landlords
 
-    The idea is to define who counts as a "small" landlord and evaluate the claim that many "small" landlords will get affected by rent control by looking at the proportion and number of "small" landlords. The number of properties owned (with varying thresholds) is used to define "small" landlords who are identified by the taxpayer match code.
+    The aim of this analysis is to accurately define the criteria for identifying a "small" landlord and assess the claim that such landlords will be adversely impacted by rent control measures. To achieve this, the proportion and number of "small" landlords in the dataset were carefully examined. The number of properties owned (with varying thresholds) is used to define "small" landlords who are identified by the taxpayer match code.
+
 
 2.  Identify areas where "small" landlord properties are a minority
 
-    Since the goal is to not only make rent more affordable, but also protect "small" landlords, the question is, "can we identify areas where there are very few 'small' landlords?"
-
+    Given that the objective is to not only enhance affordability of rent, but also safeguard the interests of "small" landlords, the pertinent question is whether it is possible to identify areas where the number of "small" landlords is particularly low.
+    
 ## Exploratory Analysis
 
 All the variables are complete, meaning there are no missingness issues.
@@ -87,7 +88,7 @@ basic_dat %>%
   skim_without_charts()
 ```
 
-However, since a geospatial analysis will be conducted, the following map was made to make sure that each community area had a substantial number of properties for analysis. As shown below, there are a few community areas with less than or equal to 100 properties. These areas need close attention during the analysis since they may not have a substantial enough amount of properties to make any conclusions.  Now, Loop was one of the community areas with a property count of less than 100 from the exploratory analysis.  The precise count is 78; the percentage of "small" landlord properties in Loop should therefore be processed with caution.
+Given that a geospatial analysis will be carried out, a map was generated to ensure that each community area had a sufficient number of properties for analysis. As depicted below, a few community areas contain less than or equal to 100 properties, and hence, warrant close scrutiny during the analysis since the sample size may be insufficient to draw any meaningful conclusions. Loop was among the community areas with less than 100 properties, specifically 78. As a result, the percentage of "small" landlord properties in Loop needs to be approached with caution during the analysis.
 
 ```{r, fig.align='center'}
 # geographic distribution
@@ -110,13 +111,13 @@ dat %>%
 
 ### 1. Uncover percentages/count of "big" vs "small" landlords
 
-The tool below represents the percentages and counts of "big" and "small" landlords based on the threshold of number of properties owned, which can be selected on the slider. The check box allows viewers to switch between percentage and count.
+The interactive tool below displays the percentages and counts of "big" and "small" landlords based on the number of properties owned, which can be adjusted using the slider. By checking the box, viewers can switch between percentage and count.
 
-Lift the Ban Coalition argues that the threshold of 6 properties owned should be used to divide "big" vs "small" landlords, while 12 is the standard number recognized in the discussion. However, no matter the choice, the percentage of "small" landlords is nearly 100%. 
+According to Lift the Ban Coalition, landlords who own six or fewer properties should be considered "small," whereas the standard number recognized in the discussion is 12. Regardless of the threshold selected, the percentage of "small" landlords remains nearly 100%.
 
-This result is corroborated by an alternative approach that divides the two groups by number of units owned, which can be activated by checking "properties/units". Even with a generous threshold of owning at least 15 units to qualify as a big landlord, about 98% are of total landlords are still considered "small".
+This result is supported by an alternative approach that classifies the two groups based on the number of units owned. By checking the "properties/units" option, viewers can switch to this approach. Even with a threshold as low as 15 units to qualify as a "big" landlord, approximately 98% of landlords are still considered "small".
 
-This finding motivates an investigation of the prevalence of properties owned by "small" landlords in different community areas.
+This finding motivates an investigation on the prevalence of properties owned by "small" landlords in different community areas.
 
 ```{r}
 shinyApp(
@@ -259,7 +260,7 @@ shinyApp(
 
 ### 2. Identify areas where "small" landlord properties are a minority
 
-This tool represents the percentage of "small" landlord properties in different community areas. Just like the previous one, the slider can be used to adjust the threshold that categorizes landlords into the two groups. Clicking on each community area will display the community area name and its corresponding percentage. Even though about 99% of the landlords are "small" on aggregate, taking a closer look to each community area's properties reveals that there exist several community areas where "small" landlords are a minority. The three community areas with lowest percentages (threshold of 6 vs 12) of "small" landlord properties were: Oakland (30 vs 31%), Near South Side (39 vs 46%), and Loop (49 vs 53%). These community areas concentrate in the populous areas around Chicago, meaning policies in these community areas will have an impact on a considerable number of people.
+This interactive tool displays the proportion of "small" landlord properties across various community areas, allowing users to adjust the threshold for categorizing landlords using the slider. Clicking on each community area displays its name and corresponding percentage. While the majority of landlords are considered "small" overall, closer examination reveals that several community areas have a minority of "small" landlords. The three community areas with the lowest percentages of "small" landlords were Oakland (30% vs 31%), Near South Side (39% vs 46%), and Loop (49% vs 53%), all located in heavily populated areas of Chicago. This underscores the importance of policies in these areas, as they can have a significant impact on a large number of residents.
 
 ```{r}
 shinyApp(
@@ -335,6 +336,6 @@ shinyApp(
 
 ## Conclusion
 
-All in all, the opposition's claim that there are many "mom and pop" landlords that can be harmed through rent control appears strong, but a close examination of individual community areas argues otherwise.  Even though most Illinois Cook landlords are "mom and pop" landlords, properties owned by them account for less than about 50% of the total in the populous areas around Chicago: Oakland, Near South Side, and Loop.  This finding will serve directly in crafting legislation that would advocate for rent control in community areas with a high population and low percentage of "small" landlord properties.
+Overall, while the opposition's argument that rent control may harm "mom and pop" landlords initially appears convincing, a closer examination of individual community areas reveals a different picture. Although the majority of landlords in Illinois Cook are "mom and pop" landlords, they own less than 50% of properties in highly populated areas such as Oakland, Near South Side, and Loop. This finding highlights the importance of considering community-specific factors when crafting rent control policies.
 
-If there was more time, population measures, expected change in rent price (with rent control), and other relevant data in these community areas can be used to quantify the financial impact of possible rent control policies.
+Further analysis could involve using population measures, expected changes in rent prices with rent control, and other relevant data to quantify the potential financial impact of rent control policies in these specific community areas.
