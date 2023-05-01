@@ -1,4 +1,4 @@
-<img width="736" alt="image" src="https://user-images.githubusercontent.com/102631336/235531702-9b3f06b6-b44e-41bc-9bf9-42de213a8cc9.png">
+<img width="751" alt="image" src="https://user-images.githubusercontent.com/102631336/235535642-a6d3fa17-c79c-4ff7-aa67-a4ea909fd1eb.png">
 
 ### Description
 This project was undertaken on behalf of the Lift the Ban Coalition, a non-profit organization that aims to lift the ban on rent control in Illinois in order to increase the affordability of housing in the state. However, opponents of rent control argue that it disproportionately harms small, independent landlords. The objective of this project was to assess the number of such landlords who may be affected by rent control and to propose solutions that balance the need for affordable housing with the interests of small-scale property owners. The report presents data in a clear and concise manner to aid the organization in developing effective legislation.
